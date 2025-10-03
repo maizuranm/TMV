@@ -15,7 +15,7 @@ def print_memory(label=""):
     if torch.cuda.is_available():
         alloc = torch.cuda.memory_allocated() / 1024**3
         reserv = torch.cuda.memory_reserved() / 1024**3
-        print(f"[GPU] {label}  Alloc: {alloc:.2f} GB | Reserv: {reserv:.2f} GB") #kalau ada GPU tunjukkan allocated (yang digunakan oleh model sekarang) dammn yg reserved (torch simpan sbg buffer)
+        print(f"[GPU] {label}  Alloc: {alloc:.2f} GB | Reserv: {reserv:.2f} GB") #kalau ada GPU tunjukkan allocated (yang digunakan oleh model sekarang) dan yg reserved (torch simpan sbg buffer)
     print(f"[CPU] {label}  RAM: {ram:.2f} GB") #kalau takder GPU tunjukkan penggunaan RAM CPU
 
 #Utility untuk write row ke dalam CSV
