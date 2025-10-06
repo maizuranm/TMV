@@ -1,5 +1,7 @@
-#Coded By: Maizura Ibrahim 
+#Coded By: Maizura Ibrahim
+#To Generate Llama4 Benchmark Test with logging pipeline
 #Version1.0 01-10-2025
+#1. Load model - catat masa - Ukur 1st token latency - Ukur throught (tok/s) - Simpan semua data ke dalam CSV untuk plot graf VRAM vs speed
 import os, time, csv, argparse, psutil, torch #torch for GPU, timing, tensor. psutil to read RAM CPU utilization. time to count time(load,generate,latency). csv for saving the benchmark result in csv files. angparse bagi kita run script dengan argumen CLI supaya lbh flexible
 from transformers import AutoTokenizer, AutoModelForCausalLM #to load model/tokenizer from Hugging Face
 
