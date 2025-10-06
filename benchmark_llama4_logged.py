@@ -33,19 +33,19 @@ def write_csv(row, csv_path):
         if write_header: w.writeheader()
         w.writerow(row)
         
-#Function Utama pelaksanaan proses benchmark
+#MAIN FUNCTION TO EXECUTE THE BENCHMARK PROCESS
 #Parameter model_path adalah lokasi model (untuk kes ini adalah dalam dir /ceph/grid/home/maizura/tmv/model/)
 #Parameter run_id adalah kod unik eksperimen (ctnya R001,R002...)
 #Parameter precision represent varians of llama4 - BF16, FP8, 4-bit, dll.
 #Parameter gpu_label represent label GPU (example 1X H100-800GB)
-#Parameter prompt for text input
-#Parameter batch for berapa input serentak
-#Parameter csv_path for file CSV untuk simpan result
-#Parameter notes for additional notes
+#Parameter prompt is for text input
+#Parameter batch is for berapa input serentak
+#Parameter csv_path is for file CSV untuk simpan result
+#Parameter notes is for additional notes
 def benchmark(model_path, run_id, precision, gpu_label, prompt, max_new_tokens=256, batch=1, csv_path="benchmark_results.csv", notes=""):
     print(f"\n===== Benchmarking {model_path} | {precision} | batch={batch} | max_new={max_new_tokens} =====") 
 
-    # Load
+    # MODEL LOADER AND TOKENIZER
     t0 = time.time()
     tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=True)
     # NOTE: Untuk FP8 checkpoint, biar loader default—torch_dtype arg tak akan “menukar” FP8 file.
