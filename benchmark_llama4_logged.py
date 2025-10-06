@@ -58,12 +58,13 @@ def benchmark(model_path, run_id, precision, gpu_label, prompt, max_new_tokens=2
 
     # SEDIAKAN INPUT - Input (support batch)
     texts = [prompt] * batch #Multiply prompt mengikut saiz batch
-    inputs = tokenizer(texts, return_tensors="pt", padding=True, truncation=False) #Tokenize dapat tensor
+    inputs = tokenizer(texts, return_tensors="pt", padding=True, truncation=False) #Tokenize-dapat tensor
     inputs = {k: v.to(model.device) for k, v in inputs.items()} #Hantar tensor ke device model (GPU)
     context_len = inputs["input_ids"].shape[1] #Save panjang context (bilangan token input)
 
+    #RESET GPU PEAK MEMORY
     if torch.cuda.is_available():
-        torch.cuda.reset_peak_memory_stats()
+        torch.cuda.reset_peak_memory_stats() #Supaya max_memory_allocated betul-betul reflect dalam run ni
     print_memory("after load")
 
     # First-token latency: generate 1 token dahulu
@@ -71,29 +72,30 @@ def benchmark(model_path, run_id, precision, gpu_label, prompt, max_new_tokens=2
     with torch.no_grad():
         _ = model.generate(**inputs, max_new_tokens=1, do_sample=False)
     if torch.cuda.is_available(): torch.cuda.synchronize()
-    t_first = time.time() - t_first0
+    t_first = time.time() - t_first0 #Catat masa-ini adalah latency of 1st token(sangat penting untuk interctive/chat)
 
     # Full generation
     t_gen0 = time.time()
     with torch.no_grad():
-        out = model.generate(**inputs, max_new_tokens=max_new_tokens, do_sample=False)
+        out = model.generate(**inputs, max_new_tokens=max_new_tokens, do_sample=False) #generate keseluruhan teks (cthnya 256 token)
     if torch.cuda.is_available(): torch.cuda.synchronize()
-    t_gen = time.time() - t_gen0
+    t_gen = time.time() - t_gen0 #catat masa total generation
 
-    # Metrics
-    gen_tokens_each = out.shape[1] - inputs["input_ids"].shape[1]
-    total_gen_tokens = gen_tokens_each * batch
-    tok_per_sec = total_gen_tokens / t_gen if t_gen > 0 else float("inf")
-    ms_per_token = (t_gen / total_gen_tokens * 1000) if total_gen_tokens > 0 else 0.0
+    # Calculate the Metrics
+    gen_tokens_each = out.shape[1] - inputs["input_ids"].shape[1] #gen_tokens_each-berapa token model hasilkan per input
+    total_gen_tokens = gen_tokens_each * batch   #total_gen_tokens-semua token hasil (batch x tokens)
+    tok_per_sec = total_gen_tokens / t_gen if t_gen > 0 else float("inf")  #tok_per_sec-throughput
+    ms_per_token = (t_gen / total_gen_tokens * 1000) if total_gen_tokens > 0 else 0.0 #ms_per_token-latency purata setiap token
 
-    # VRAM peak (lebih tepat dari allocated/reserved current)
+    # AMBIL VRAM PEAK (lebih tepat dari allocated/reserved current)
     if torch.cuda.is_available():
-        vram_peak_gb = torch.cuda.max_memory_allocated() / 1024**3
+        vram_peak_gb = torch.cuda.max_memory_allocated() / 1024**3 #Ambil peak memory (semasa run)-lebih tepat dari snapshot "allocated" biasa.
     else:
         vram_peak_gb = 0.0
-
+        
+    #PRINT & LOG
     print_memory("after gen")
-    print(f"First token latency: {t_first:.3f}s")
+    print(f"First token latency: {t_first:.3f}s") #print result ke terminal
     print(f"Generated {total_gen_tokens} tokens in {t_gen:.2f}s  → {tok_per_sec:.2f} tok/s")
     print(f"Avg latency: {ms_per_token:.2f} ms/token")
     print(f"Load time: {load_time:.2f}s")
@@ -114,10 +116,11 @@ def benchmark(model_path, run_id, precision, gpu_label, prompt, max_new_tokens=2
         "load_time_s": f"{load_time:.2f}",
         "notes": notes or ""
     }
-    write_csv(row, csv_path)
+    write_csv(row, csv_path) #save row dalam CSV untuk analisis
     print("Logged to:", csv_path)
     return row
-
+    
+#Main block (argparse)
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("--model_path", type=str, required=True)
