@@ -46,21 +46,21 @@ def benchmark(model_path, run_id, precision, gpu_label, prompt, max_new_tokens=2
     print(f"\n===== Benchmarking {model_path} | {precision} | batch={batch} | max_new={max_new_tokens} =====") 
 
     # MODEL LOADER AND TOKENIZER
-    t0 = time.time()
-    tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=True)
+    t0 = time.time() #Start the timer
+    tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=True) #Load the tokenizer
     # NOTE: Untuk FP8 checkpoint, biar loader default—torch_dtype arg tak akan “menukar” FP8 file.
     model = AutoModelForCausalLM.from_pretrained(
         model_path,
         torch_dtype=torch.bfloat16,   # BF16 runtime; FP8 weights tetap akan dihormati oleh loader
         device_map="auto"
     )
-    load_time = time.time() - t0
+    load_time = time.time() - t0 #Catat masa load
 
-    # Input (support batch)
-    texts = [prompt] * batch
-    inputs = tokenizer(texts, return_tensors="pt", padding=True, truncation=False)
-    inputs = {k: v.to(model.device) for k, v in inputs.items()}
-    context_len = inputs["input_ids"].shape[1]
+    # SEDIAKAN INPUT - Input (support batch)
+    texts = [prompt] * batch #Multiply prompt mengikut saiz batch
+    inputs = tokenizer(texts, return_tensors="pt", padding=True, truncation=False) #Tokenize dapat tensor
+    inputs = {k: v.to(model.device) for k, v in inputs.items()} #Hantar tensor ke device model (GPU)
+    context_len = inputs["input_ids"].shape[1] #Save panjang context (bilangan token input)
 
     if torch.cuda.is_available():
         torch.cuda.reset_peak_memory_stats()
