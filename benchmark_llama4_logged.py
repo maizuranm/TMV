@@ -1,7 +1,9 @@
-import os, time, csv, argparse, psutil, torch #torch untuk GPU, timing, tensor. psutil untuk baca penggunaan RAM CPU. time utk kira masa(load,generate,latency). csv untuk simpan hasil benchmark dalam fail csv. angparse bagi kita run script dengan argumen CLI supaya lbh flexible
-from transformers import AutoTokenizer, AutoModelForCausalLM #untuk load model/tokenizer dari Hugging Face
+#Coded By: Maizura Ibrahim 
+#Version1.0 01-10-2025
+import os, time, csv, argparse, psutil, torch #torch for GPU, timing, tensor. psutil to read RAM CPU utilization. time to count time(load,generate,latency). csv for saving the benchmark result in csv files. angparse bagi kita run script dengan argumen CLI supaya lbh flexible
+from transformers import AutoTokenizer, AutoModelForCausalLM #to load model/tokenizer from Hugging Face
 
-#Utility untuk detect GPU
+#UTILITY CODE TO DETECT GPU
 def human_gpu():
     if not torch.cuda.is_available():
         return "CPU-only" #kalau tak ada gpu, maka result adalah "CPU only"
@@ -9,7 +11,7 @@ def human_gpu():
     num = torch.cuda.device_count()
     return f"{num}x {name}" #kalau ada GPU, result adalah dlm string "1x H100-80GB"
 
-#Utility untuk print memory usage
+#UTILITY CODE TO PRINT MEMORY USAGE
 def print_memory(label=""):
     ram = psutil.Process(os.getpid()).memory_info().rss / 1024**3
     if torch.cuda.is_available():
@@ -18,7 +20,7 @@ def print_memory(label=""):
         print(f"[GPU] {label}  Alloc: {alloc:.2f} GB | Reserv: {reserv:.2f} GB") #kalau ada GPU tunjukkan allocated (yang digunakan oleh model sekarang) dan yg reserved (torch simpan sbg buffer)
     print(f"[CPU] {label}  RAM: {ram:.2f} GB") #kalau takder GPU tunjukkan penggunaan RAM CPU
 
-#Utility untuk write row ke dalam CSV
+#UTILITY CODE TO WRITE ROWS INTO THE CSV FILE
 def write_csv(row, csv_path):
     header = [
         "run_id","model_path","precision","gpu_type_qty",
@@ -34,8 +36,12 @@ def write_csv(row, csv_path):
 #Function Utama pelaksanaan proses benchmark
 #Parameter model_path adalah lokasi model (untuk kes ini adalah dalam dir /ceph/grid/home/maizura/tmv/model/)
 #Parameter run_id adalah kod unik eksperimen (ctnya R001,R002...)
-#Parameter precision adalah varians model llama4 - BF16, FP8, 4-bit, dll.
-#
+#Parameter precision represent varians of llama4 - BF16, FP8, 4-bit, dll.
+#Parameter gpu_label represent label GPU (example 1X H100-800GB)
+#Parameter prompt for text input
+#Parameter batch for berapa input serentak
+#Parameter csv_path for file CSV untuk simpan result
+#Parameter notes for additional notes
 def benchmark(model_path, run_id, precision, gpu_label, prompt, max_new_tokens=256, batch=1, csv_path="benchmark_results.csv", notes=""):
     print(f"\n===== Benchmarking {model_path} | {precision} | batch={batch} | max_new={max_new_tokens} =====") 
 
